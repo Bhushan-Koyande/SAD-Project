@@ -5,6 +5,7 @@ var ffmpeg = require('fluent-ffmpeg');
 
 const { Video } = require("../models/Video");
 const { auth } = require("../middleware/auth");
+const { isValidObjectId } = require('mongoose');
 
 var storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -35,8 +36,8 @@ class VideoClass{
         this.uploadVideo();
         this.getVideos();
         this.play();
-        this.searchVideos();
-        this.getOwnVideos();
+        this.fetchSearchedVideos();
+        this.fetchOwnVideos();
     }
 
     uploadVideo(){
@@ -123,23 +124,29 @@ class VideoClass{
         });
     }
 
-    searchVideos(){
+    fetchSearchedVideos(){
         router.post("/searchVideos", (req, res) => {
 
-            Video.find({title: { $regex: req.body.searchTerm, $options: "i" }},(err, videos) => {
-                if(err) return res.status(400).send(err);
-                res.status(200).json({ success: true, videos })
-            })
+            Video.find({title: { $regex: req.body.searchTerm, $options: "i" }})
+                .populate('writer')
+                .exec((err, videos) => {
+                    if(err) return res.status(400).send(err);
+                    res.status(200).json({ success: true, videos })
+                })
+
         });
     }
 
-    getOwnVideos(){
+    fetchOwnVideos(){
         router.post("/getOwnVideos", (req, res) => {
 
-            Video.find({"author": req.body.authorId},(err, videos) => {
-                if(err) return res.status(400).send(err);
-                res.status(200).json({ success: true, videos })
-            })
+            Video.find({writer: req.body.author})
+                .populate('writer')
+                .exec((err, videos) => {
+                    if(err) return res.status(400).send(err);
+                    res.status(200).json({ success: true, videos })
+                })
+
         });        
     }
 
