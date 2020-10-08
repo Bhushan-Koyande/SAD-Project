@@ -4,8 +4,9 @@ const multer = require('multer');
 var ffmpeg = require('fluent-ffmpeg');
 
 const { Video } = require("../models/Video");
+const { Follower } = require("../models/Follower");
 const { auth } = require("../middleware/auth");
-const { isValidObjectId } = require('mongoose');
+
 
 var storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -38,6 +39,8 @@ class VideoClass{
         this.play();
         this.fetchSearchedVideos();
         this.fetchOwnVideos();
+        this.getFollowedVideos();
+        this.showTrendingVideos();
     }
 
     uploadVideo(){
@@ -115,6 +118,15 @@ class VideoClass{
     play(){
         router.post("/getVideo", (req, res) => {
 
+            let viewCount = video.views;
+            Video.updateOne({"_id": req.body.videoId}, {"views": viewCount + 1}, (err, doc) => {
+                if(err){
+                    console.log(err);
+                }else{
+                    console.log('view count updated' + doc);
+                }
+            });
+
             Video.findOne({ "_id" : req.body.videoId })
             .populate('writer')
             .exec((err, video) => {
@@ -150,16 +162,45 @@ class VideoClass{
         });        
     }
 
+    getFollowedVideos(){
+        router.post("/getFollowedVideos", (req, res) => {
+
+            Follower.find({ 'userFrom': req.body.userFrom })
+            .exec((err, following) => {
+                if(err){
+                    return res.status(400).send(err);
+                }
+
+                let followedUsers = [];
+
+                following.map((followingUser, i) => {
+                    followedUsers.push(followingUser.userTo)
+                })
+
+                Video.find({ writer: { $in: followedUsers } })
+                .populate('writer')
+                .exec((err, videos) => {
+                    if(err){
+                        return res.status(400).send(err);
+                    }
+
+                    res.status(200).json({ success: true, videos });
+                });
+
+            });
+        });
+    }
+
+    showTrendingVideos(){
+        router.get("/trending", (req, res) => {
+            
+        })
+    }
+
 }
 
 
 new VideoClass();
-
-
-
-
-
-
 
 
 module.exports = router;
