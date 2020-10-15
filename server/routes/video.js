@@ -118,19 +118,33 @@ class VideoClass{
     play(){
         router.post("/getVideo", (req, res) => {
 
-            let viewCount = video.views;
-            Video.updateOne({"_id": req.body.videoId}, {"views": viewCount + 1}, (err, doc) => {
-                if(err){
-                    console.log(err);
-                }else{
-                    console.log('view count updated' + doc);
-                }
-            });
 
             Video.findOne({ "_id" : req.body.videoId })
             .populate('writer')
             .exec((err, video) => {
-                if(err) return res.status(400).send(err);
+                if(err){
+                    return res.status(400).send(err);
+                }else{
+                    let viewCount = video.views;
+                    Video.updateOne({"_id": req.body.videoId}, {"views": viewCount + 1})
+                    .populate('writer')
+                    .exec((err, doc) => {
+                        if(err){
+                            console.log(err);
+                        }else{
+                            console.log(doc);
+                        }
+                    });    
+                } 
+            
+            })
+
+            Video.findOne({ "_id": req.body.videoId })
+            .populate('writer')
+            .exec((err, video) => {
+                if(err){
+                    return res.status(400).send(err);
+                }
                 res.status(200).json({ success: true, video })
             })
         });
@@ -193,7 +207,15 @@ class VideoClass{
 
     showTrendingVideos(){
         router.get("/trending", (req, res) => {
-            
+            Video.find({}).sort({ views: -1 })
+            .populate('writer')
+            .exec((err, videos) => {
+                if(err){
+                    return res.status(400).send(err);
+                }
+
+                res.status(200).json({ success: true, videos });
+            })
         })
     }
 

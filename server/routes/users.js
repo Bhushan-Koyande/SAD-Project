@@ -87,7 +87,13 @@ class UserClass{
     }
 
     editProfile(){
+
         router.post("/editName", auth, (req, res) => {
+            User.findOne({ name: req.body.newName }, (err, user) => {
+                if(user){
+                    return res.status(400).json({errMsg : "You can not user old name"});
+                }
+            })
             User.findOneAndUpdate({ _id: req.body._id }, { name: req.body.newName }, (err, doc) => {
                 if (err) return res.json({ success: false, err });
                 return res.status(200).send({
@@ -97,6 +103,11 @@ class UserClass{
         });
         
         router.post("/editEmail", auth, (req, res) => {
+            User.findOne({ name: req.body.newName }, (err, user) => {
+                if(user){
+                    return res.status(400).json({errMsg : "You can not user old email"});
+                }
+            })
             User.findOneAndUpdate({ _id: req.body._id }, { email: req.body.newEmail }, (err, doc) => {
                 if (err) return res.json({ success: false, err });
                 return res.status(200).send({
@@ -106,6 +117,15 @@ class UserClass{
         });
         
         router.post("/editPassword", auth, (req, res) => {
+            User.findOne({ name: req.body.newName }, (err, user) => {
+                if(user){
+                    user.comparePassword(req.body.newPassword, (err, isMatch) => {
+                        if(isMatch){
+                            return res.status(400).json({errMsg : "You can not user old password"});
+                        }
+                    })
+                }
+            })
             User.findOneAndUpdate({ _id: req.body._id }, { password: req.body.newPassword }, (err, doc) => {
                 if (err) return res.json({ success: false, err });
                 return res.status(200).send({
