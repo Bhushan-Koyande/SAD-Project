@@ -74,14 +74,7 @@ class FollowerClass{
                 if(err){
                     return res.json({success: false, err});
                 }
-                return res.status(200).json({ success: true });
-            })
-        
-            follower.save((err, doc) => {
-                if(err){
-                    return res.json({success: false, err});
-                }
-                return res.status(200).json({ success: true });
+                return res.status(200).json({ success: true, doc });
             })
         
         });
